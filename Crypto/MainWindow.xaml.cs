@@ -14,7 +14,7 @@ namespace Crypto
         {
             InitializeComponent();
 
-            //Status.Fill = GetJson.CheckAPIStatus();
+           // Status.Fill = GetJson.CheckAPIStatus();
 
             Top7Coins24();
 
@@ -22,12 +22,14 @@ namespace Crypto
 
         private List<Coin_> Top7Coins24()
         {
+            GetJson.GetTop7();
             List<Coin_> coins = new List<Coin_>();
 
 
 
             return coins;
         }
+
 
 
     }

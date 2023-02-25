@@ -1,4 +1,6 @@
 ﻿using Crypto.Entity;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,12 +25,12 @@ namespace Crypto.Services
 
         public static async Task<List<Coin_>> GetTop7()
         {
-            string top7Url = "/search/trending";
+            string top7Url = $"{APIUrl}/search/trending";
             CheckAPIStatus();
             List<Coin_> coins = new List<Coin_>();
-            var response = await RequestAndGetJson(APIUrl+top7Url);
-            
-           List<string> st =  GetCoinIds(response);
+            var response = await RequestAndGetJson(top7Url);
+
+            List<string> st = GetCoinIds(response);
 
 
             return coins;
@@ -36,10 +38,12 @@ namespace Crypto.Services
 
         public static async Task<Brush> CheckAPIStatus()
         {
-        OneMore:
-            string checkApiUrl = "/ping";
+
+        TryItAgain:
+
+            string checkApiUrl = $"{APIUrl}/ping";
             GetHttpClient();
-            var respone = await httpClient.GetAsync(APIUrl + checkApiUrl);
+            var respone = await httpClient.GetAsync(checkApiUrl);
             if (respone.IsSuccessStatusCode)
             {
                 return Brushes.Green;
@@ -47,33 +51,31 @@ namespace Crypto.Services
             else
             {
                 Task.Delay(3000).Wait();
-                goto OneMore;
+                goto TryItAgain;
             }
         }
         //TODO: get id 
         private static List<string> GetCoinIds(string jsonResponse)
         {
             List<string> listIds = new List<string>();
-          /*  while (jsonResponse.EndsWith("\"exchanges\""))
-            {
-                string line = jsonResponse;
-                if (line.Contains("\"id\""))
-                {
-                    string id = line.Split(',')[0].Split(':')[1].Split('\"')[1].Split('\"')[0];
-                listIds.Add(id);
-                }               
-            }*/
 
+            var jToken = JToken.Parse(jsonResponse);
+
+            var item = jToken["coins"];
+
+            List<BaseEntity> baseEntities = new List<BaseEntity>();
+            baseEntities = JsonConvert.DeserializeObject<List<BaseEntity>>(item.ToString());
+      
             return listIds;
         }
 
-        private static async Task<Coin_> GetCoin(string id)
+        private static async Task<BaseEntity> GetCoin(string id)
         {
-            string getCoinUrl = $"/coins/{id}";
+            string getCoinUrl = $"{APIUrl}/coins/{id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false";
             CheckAPIStatus();
             GetHttpClient();
-            var respone = await httpClient.GetAsync(APIUrl + getCoinUrl);
-            return null;
+            var response = RequestAndGetJson(getCoinUrl);
+            return JsonConvert.DeserializeObject<BaseEntity>(await response);
         }
 
         private static async Task<string> RequestAndGetJson(string urlRequest)

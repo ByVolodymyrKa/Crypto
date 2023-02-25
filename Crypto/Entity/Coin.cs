@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Crypto.Entity
 {
-    internal class Coin_
+    internal class Coin_ : BaseEntity
     {
         public int symbol { get; set; }
         public string name { get; set; }

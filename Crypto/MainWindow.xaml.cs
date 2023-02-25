@@ -1,5 +1,6 @@
 ﻿using Crypto.Entity;
 using Crypto.Services;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 
@@ -14,15 +15,14 @@ namespace Crypto
         {
             InitializeComponent();
 
-           // Status.Fill = GetJson.CheckAPIStatus();
-
-            Top7Coins24();
+            
 
         }
+            
 
-        private List<Coin_> Top7Coins24()
+        private  List<Coin_> Top7Coins24()
         {
-            GetJson.GetTop7();
+           
             List<Coin_> coins = new List<Coin_>();
 
 
@@ -30,7 +30,11 @@ namespace Crypto
             return coins;
         }
 
-
+        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            Status.Fill = await GetJson.CheckAPIStatus();
+            await GetJson.GetTop7();
+        }
 
     }
 }

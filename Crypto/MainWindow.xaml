@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Crypto"
         mc:Ignorable="d"
+        Loaded="Window_Loaded"
         Title="MainWindow" Height="450" Width="800">
     <Grid HorizontalAlignment="Center" Width="800" Height="440" VerticalAlignment="Bottom" Margin="0,0,0,-6">
         <ListBox x:Name="ListTop7" d:ItemsSource="{d:SampleData ItemCount=5}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="9,65,0,0" Height="340" Width="187" FontSize="18"/>

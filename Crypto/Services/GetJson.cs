@@ -1,100 +1,125 @@
-﻿using Crypto.Entity;
+﻿using Crypto.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection.PortableExecutable;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
-using System.Windows.Shapes;
-using System.Xml.Linq;
 
 namespace Crypto.Services
 {
     internal class GetJson
     {
         private static HttpClient httpClient;
+
         private static readonly string APIUrl = "https://api.coingecko.com/api/v3";
 
+        private static List<CoinObject> listOFCoins;
 
-
-
-        public static async Task<List<Coin_>> GetTop7()
+        public static async Task<List<Coin>> GetTop7()
         {
             string top7Url = $"{APIUrl}/search/trending";
-            CheckAPIStatus();
-            List<Coin_> coins = new List<Coin_>();
+
+            List<Coin> coins = new();
+
             var response = await RequestAndGetJson(top7Url);
 
-            List<string> st = GetCoinIds(response);
+            List<string> ids = GetCoinIds(response);
 
-
+            foreach (string coin in ids)
+            {
+                await Task.Delay(500);
+                coins.Add(await GetCoin(coin));
+            }
+            //coins.Sort();
             return coins;
         }
 
-        public static async Task<Brush> CheckAPIStatus()
+        public static async void GetListOfCoins()
         {
+            string listOfCoinUrl = $"{APIUrl}/coins/list";
 
-        TryItAgain:
+            var response = await RequestAndGetJson(listOfCoinUrl);
 
-            string checkApiUrl = $"{APIUrl}/ping";
-            GetHttpClient();
-            var respone = await httpClient.GetAsync(checkApiUrl);
-            if (respone.IsSuccessStatusCode)
-            {
-                return Brushes.Green;
-            }
-            else
-            {
-                Task.Delay(3000).Wait();
-                goto TryItAgain;
-            }
+            listOFCoins = JsonConvert.DeserializeObject<List<CoinObject>>(response);
         }
-        //TODO: get id 
+
+        public static async Task<Coin> SearchCoinAsync(string coin)
+        {
+            var item = listOFCoins.Where(x => x.Id.Equals(coin) || x.Name.Equals(coin) || x.Symbol.Equals(coin)).FirstOrDefault();
+
+            return item != null ? await GetCoin(item.Id) : null;
+        }
+
+        public static async Task<bool> CheckAPIStatus()
+        {
+            string checkApiUrl = $"{APIUrl}/ping";
+
+            GetHttpClient();
+
+            var respone = await httpClient.GetAsync(checkApiUrl);
+
+            return respone.IsSuccessStatusCode;
+        }
+
         private static List<string> GetCoinIds(string jsonResponse)
         {
-            List<string> listIds = new List<string>();
+            List<string> listIds = new();
 
-            var jToken = JToken.Parse(jsonResponse);
+            var jObject = JObject.Parse(jsonResponse);
 
-            var item = jToken["coins"];
+            var item = jObject["coins"];
 
-            List<BaseEntity> baseEntities = new List<BaseEntity>();
-            baseEntities = JsonConvert.DeserializeObject<List<BaseEntity>>(item.ToString());
-      
+            foreach (JToken coin in item)
+            {
+                listIds.Add((string)coin["item"]["id"]);
+            }
+
             return listIds;
         }
 
-        private static async Task<BaseEntity> GetCoin(string id)
+        private static async Task<Coin> GetCoin(string id)
         {
-            string getCoinUrl = $"{APIUrl}/coins/{id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false";
-            CheckAPIStatus();
-            GetHttpClient();
-            var response = RequestAndGetJson(getCoinUrl);
-            return JsonConvert.DeserializeObject<BaseEntity>(await response);
+            string getCoinUrl = $"{APIUrl}/coins/{id}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false";
+
+            var response = await RequestAndGetJson(getCoinUrl);
+
+            return JsonConvert.DeserializeObject<Coin>(response);
         }
 
         private static async Task<string> RequestAndGetJson(string urlRequest)
         {
             GetHttpClient();
-            string response = await httpClient.GetStringAsync(urlRequest);
-            Console.WriteLine(response);
+
+            string response;
+
+            while (true)
+            {
+                try
+                {
+                    response = await httpClient.GetStringAsync(urlRequest);
+                    break;
+                }
+                catch (Exception)
+                {
+                    await Task.Delay(10000);
+                }
+            }
+
             return response;
         }
 
         private static HttpClient GetHttpClient()
         {
-            if (httpClient == null)
-            {
-                httpClient = new HttpClient();
-            }
+            httpClient ??= new HttpClient();
+
             return httpClient;
         }
 
     }
-
 }
+
+
